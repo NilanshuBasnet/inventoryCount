@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Counter</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2515/2515263.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to hide the number input spin buttons */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+        /* Custom styles for button animation */
+        .btn-black-pill {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-black-pill:active {
+            transform: scale(0.98);
+        }
+        .count-btn {
+            /* Increased size of buttons for easier tapping */
+            @apply flex-shrink-0 w-9 h-9 rounded-full bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-700 font-bold flex items-center justify-center text-xl cursor-pointer transition-colors duration-100;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <header class="p-4 pt-6 pb-8">
+            <h1 class="text-5xl font-bold text-gray-900 mb-2">Stay Organized<br>with Ease</h1>
+            <p class="text-gray-500 text-base">Effortlessly record and view your inventory counts</p>
+        </header>
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <main class="p-4 pt-0">
+                <form id="inventoryForm" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                </form>
+            </main>
+        </div>
+
+        <div class="p-4 pt-0 flex flex-col sm:flex-row gap-4">
+            
+            <button id="resetButton" 
+                    class="btn-black-pill w-full sm:w-1/3 bg-red-600 text-white font-semibold py-4 rounded-full text-lg shadow-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300">
+                Reset All
+            </button>
+            
+            <button id="copyButton" 
+                    class="btn-black-pill w-full sm:w-2/3 bg-black text-white font-semibold py-4 rounded-full text-lg shadow-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-black/20">
+                Copy to Clipboard
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Define Inventory Data (Item, Group, and Image) ---
+        const inventoryData = {
+            'Poached Chicken': { image: 'https://cdn-icons-png.flaticon.com/512/1717/1717350.png', group: 'main_items' },
+            'Avocado': { image: 'https://cdn-icons-png.flaticon.com/512/9702/9702201.png', group: 'main_items' },
+            'Eggplant': { image: 'https://cdn-icons-png.flaticon.com/512/4056/4056868.png', group: 'main_items' },
+            'Cabbage': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217775.png', group: 'main_items' },
+            'Carrots': { image: 'https://cdn-icons-png.flaticon.com/512/1041/1041355.png', group: 'main_items' },
+            'Coriander': { image: 'https://cdn-icons-png.flaticon.com/512/4727/4727220.png', group: 'main_items' },
+            'Cucumber': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217836.png', group: 'main_items' },
+            'Red beetroot': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217831.png', group: 'main_items' },
+            'Shallots': { image:    'https://cdn-icons-png.flaticon.com/512/10441/10441177.png', group: 'main_items' },
+            'Red onion': { image: 'https://cdn-icons-png.flaticon.com/512/5009/5009842.png', group: 'main_items' },
+            'Green chilli': { image: 'https://cdn-icons-png.flaticon.com/512/4046/4046849.png', group: 'main_items' },
+            'Kale': { image: 'https://cdn-icons-png.flaticon.com/512/4479/4479133.png', group: 'main_items' },
+            'Radish': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217779.png', group: 'main_items' },
+            'Mint': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217816.png', group: 'main_items' },
+            'Edamame': { image: 'https://cdn-icons-png.flaticon.com/512/5009/5009543.png', group: 'main_items' },
+            'Seaweed': { image: 'https://cdn-icons-png.flaticon.com/128/11637/11637408.png', group: 'main_items' },
+            'Spicy broccoli': { image: 'https://cdn-icons-png.flaticon.com/512/9702/9702211.png', group: 'main_items' },
+            'Lemon olive oil': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Wasabi mayo': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Roasted sesame': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Sushi rice': { image: 'https://cdn-icons-png.flaticon.com/512/2528/2528709.png', group: 'main_items' },
+            'Brown rice': { image: 'https://cdn-icons-png.flaticon.com/512/17940/17940798.png', group: 'main_items' },
+            'Tamari almonds': { image: 'https://cdn-icons-png.flaticon.com/512/9086/9086664.png', group: 'main_items' },
+            'Tobiko': { image: 'https://cdn-icons-png.flaticon.com/512/11637/11637384.png', group: 'main_items' },
+            'Beef brisket': { image: 'https://cdn-icons-png.flaticon.com/512/9086/9086602.png', group: 'main_items' },
+            'Bok Choy': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217842.png', group: 'main_items' },
+            'Chilli jam': { image: 'https://cdn-icons-png.flaticon.com/512/2276/2276662.png', group: 'main_items' },
+            'Lime Cashew': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Miso Glaze': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Mix leaves': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217826.png', group: 'main_items' },
+            'Pickled Cucumber': { image: 'https://cdn-icons-png.flaticon.com/512/9702/9702236.png', group: 'main_items' },
+            'Pickled Daikon': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217743.png', group: 'main_items' },
+            'Red Hot Chilli Dressing': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Roasted sweet potatoes': { image: 'https://cdn-icons-png.flaticon.com/512/7217/7217843.png', group: 'main_items' },
+            'Roasted Tofu': { image: 'https://cdn-icons-png.flaticon.com/512/9702/9702251.png', group: 'main_items' },
+            'Spicy Sesame': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' },
+            'Street sleeves': { image: 'https://cdn-icons-png.flaticon.com/512/15315/15315308.png', group: 'main_items' }, 
+            'Tamari Ponzu': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' }, 
+            'Thai Green Goddess': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' }, 
+            'Umami': { image: 'https://cdn-icons-png.flaticon.com/512/9702/9702249.png', group: 'main_items' }, 
+            'Wasabi peas': { image: 'https://cdn-icons-png.flaticon.com/512/3951/3951866.png', group: 'main_items' }, 
+            'House Shoyu': { image: 'https://cdn-icons-png.flaticon.com/512/8642/8642941.png', group: 'main_items' }, 
+            'Sashimi': { image: 'https://cdn-icons-png.flaticon.com/512/11637/11637376.png', group: 'fish' },
+            'Fillet': { image: 'https://cdn-icons-png.flaticon.com/512/2674/2674064.png', group: 'fish' },
+        };
+
+        // --- 2. COUNTING ORDER (Input Order) ---
+        const countingOrder = [
+            'Avocado', 'Bok Choy', 'Beef brisket', 'Cabbage', 'Carrots', 'Chilli jam', 
+            'Coriander', 'Cucumber', 'Edamame', 'Eggplant', 'Green chilli', 'House Shoyu', 
+            'Kale', 'Lime Cashew', 'Lemon olive oil', 'Miso Glaze', 'Wasabi mayo', 
+            'Mix leaves', 'Mint', 'Pickled Cucumber', 'Pickled Daikon', 'Poached Chicken', 
+            'Red beetroot', 'Red Hot Chilli Dressing', 'Brown rice', 'Sushi rice', 
+            'Roasted Tofu', 'Radish', 'Red onion', 'Roasted sesame', 'Roasted sweet potatoes', 
+            'Spicy Sesame', 'Seaweed', 'Shallots', 'Spicy broccoli', 'Tamari Ponzu', 
+            'Thai Green Goddess', 'Tamari almonds', 'Tobiko', 'Umami', 'Wasabi peas', 
+            'Street sleeves', 'Sashimi', 'Fillet' 
+        ];
+
+        // --- 3. OUTPUT ORDER (Copy to Clipboard Format) ---
+        const outputOrder = {
+            'main_items': [
+                'Poached Chicken', 'Avocado', 'Eggplant', 'Cabbage', 'Carrots',
+                'Coriander', 'Cucumber', 'Red beetroot', 'Shallots', 'Red onion',
+                'Green chilli', 'Kale', 'Radish', 'Mint', 'Edamame', 'Seaweed',
+                'Spicy broccoli', 'Lemon olive oil', 'Wasabi mayo', 'Roasted sesame',
+                'Sushi rice', 'Brown rice', 'Tamari almonds', 'Tobiko', 'Beef brisket',
+                'Bok Choy', 'Chilli jam', 'Lime Cashew', 'Miso Glaze', 'Mix leaves',
+                'Pickled Cucumber', 'Pickled Daikon', 'Red Hot Chilli Dressing',
+                'Roasted sweet potatoes', 'Roasted Tofu', 'Spicy Sesame', 'Street sleeves',
+                'Tamari Ponzu', 'Thai Green Goddess', 'Umami', 'Wasabi peas', 'House Shoyu',
+            ],
+            'fish': ['Sashimi', 'Fillet']
+        };
+
+        // --- 4. DOM Element References ---
+        const inventoryForm = document.getElementById('inventoryForm');
+        const copyButton = document.getElementById('copyButton');
+        const resetButton = document.getElementById('resetButton'); 
+
+        // **LOCAL STORAGE KEY**
+        const LOCAL_STORAGE_KEY = 'inventoryCounts';
+
+        // **NEW: Save counts to Local Storage**
+        function saveCounts() {
+            const counts = {};
+            countingOrder.forEach(item => {
+                const itemId = item.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const inputElement = document.getElementById(itemId);
+                if (inputElement) {
+                    counts[itemId] = inputElement.value; 
+                }
+            });
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(counts));
+        }
+
+        // **NEW: Load counts from Local Storage**
+        function loadCounts() {
+            const storedCounts = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedCounts) {
+                return JSON.parse(storedCounts);
+            }
+            return {};
+        }
+
+        // --- 5. Helper function to handle count changes (Supports Decimals, Adjusts by 1.0) ---
+        function changeCount(itemId, delta) {
+            const inputElement = document.getElementById(itemId);
+            if (!inputElement) return;
+
+            // Use parseFloat to read decimal values
+            let currentValue = parseFloat(inputElement.value) || 0; 
+            
+            // Fix potential floating point math issues before displaying (Crucial for 0.1 increments)
+            let newValue = (currentValue * 10 + delta * 10) / 10; 
+
+            if (newValue >= 0) {
+                // Use toFixed(1) to keep the display clean and consistent
+                inputElement.value = newValue.toFixed(1); 
+            } else {
+                inputElement.value = "0.0";
+            }
+            
+            // Save counts after every change
+            saveCounts();
+        }
+
+        // --- 6. Function to Render Input Fields (Includes Decimal Step and Auto-Select) ---
+        function renderInputFields() {
+            const fragment = document.createDocumentFragment();
+            // Load stored data to set initial values
+            const storedCounts = loadCounts();
+
+            countingOrder.forEach(item => {
+                const itemId = item.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const itemDetails = inventoryData[item] || { image: 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=?' };
+
+                // Get the stored value, default to "0.0"
+                const initialValue = storedCounts[itemId] || "0.0";
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition duration-100";
+                
+                itemDiv.innerHTML = `
+                    <div class="flex items-center space-x-4 w-3/5">
+                        <img class="h-12 w-12 rounded-full object-cover border border-gray-100" 
+                                src="${itemDetails.image}" 
+                                alt="${item}" loading="lazy">
+                        <label for="${itemId}" class="text-base font-medium text-gray-900 truncate">${item}</label>
+                    </div>
+
+                    <div class="flex items-center space-x-2 w-2/5 justify-end">
+                        <button type="button" 
+                                class="count-btn" 
+                                onclick="changeCount('${itemId}', -1.0)">
+                            &minus;
+                        </button>
+
+                        <input type="number" 
+                                id="${itemId}" 
+                                name="${itemId}" 
+                                value="${initialValue}" 
+                                min="0" 
+                                step="0.1" 
+                                inputmode="decimal" 
+                                pattern="[0-9]*[.]?[0-9]+"
+                                class="w-16 h-9 text-base text-center border border-gray-300 rounded-lg p-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                oninput="if(this.value < 0) this.value = 0; saveCounts();"
+                                onfocus="this.select()">
+
+                        <button type="button" 
+                                class="count-btn" 
+                                onclick="changeCount('${itemId}', 1.0)">
+                            &plus;
+                        </button>
+                    </div>
+                `;
+                fragment.appendChild(itemDiv);
+            });
+            inventoryForm.appendChild(fragment);
+        }
+
+        // --- 7. Function to Generate Formatted Output (Dynamic Output Formatting) ---
+        function generateFormattedOutput() {
+            let output = '';
+
+            // Helper function to get the count for an item
+            const getItemCount = (item) => {
+                const itemId = item.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const inputElement = document.getElementById(itemId);
+                
+                let count = inputElement ? parseFloat(inputElement.value) || 0 : 0; 
+                
+                count = Math.max(0, count);
+
+                let formattedCount;
+                
+                // If the decimal part is 0, output as an integer; otherwise, output with one decimal place.
+                if (count % 1 === 0) {
+                    formattedCount = Math.round(count).toString(); 
+                } else {
+                    formattedCount = count.toFixed(1);
+                }
+                
+                return formattedCount;
+            };
+
+            // Process main items based on the required output order
+            outputOrder.main_items.forEach(item => {
+                const count = getItemCount(item); 
+                output += `${item}- ${count}\n`;
+            });
+
+            // Add separation for the Fish group
+            output += `\nFish\n`;
+
+            // Process fish items
+            outputOrder.fish.forEach(item => {
+                const count = getItemCount(item);
+                output += `${item} - ${count}\n`;
+            });
+
+            return output.trim();
+        }
+        
+        // --- Helper Function for Visual Feedback ---
+        function showCopyFeedback(success) {
+            if (success) {
+                copyButton.textContent = 'Copied! ✅';
+                copyButton.classList.remove('bg-black', 'hover:bg-gray-800', 'bg-red-600', 'hover:bg-red-700');
+                copyButton.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                copyButton.textContent = 'Failed! ❌';
+                copyButton.classList.remove('bg-black', 'hover:bg-gray-800', 'bg-green-600', 'hover:bg-green-700');
+                copyButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            }
+
+            setTimeout(() => {
+                copyButton.textContent = 'Copy to Clipboard';
+                copyButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-red-600', 'hover:bg-red-700');
+                copyButton.classList.add('bg-black', 'hover:bg-gray-800');
+            }, 2000);
+        }
+
+        // --- 8. Function to Copy to Clipboard (With Mobile Fallback) ---
+        async function copyToClipboard() {
+            const textToCopy = generateFormattedOutput();
+            let copySuccess = false;
+
+            // 1. Try modern Clipboard API (Recommended)
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    copySuccess = true;
+                } catch (err) {
+                    console.error('Modern Clipboard API failed:', err);
+                }
+            }
+
+            // 2. Fallback using document.execCommand (Legacy/Mobile compatible)
+            if (!copySuccess) {
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                textArea.style.position = 'fixed'; 
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    copySuccess = document.execCommand('copy');
+                    if (!copySuccess) {
+                        console.error('Legacy execCommand failed.');
+                    }
+                } catch (err) {
+                    console.error('Fallback execCommand failed:', err);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+
+            showCopyFeedback(copySuccess);
+
+            if (!copySuccess) {
+                alert('Failed to copy to clipboard. Please try manually selecting and copying the text.');
+            }
+        }
+
+        // --- 9. Function to Reset All Counts (MODIFIED: Added Confirmation and Local Storage Clear) ---
+        function resetAllCounts() {
+            // **MODIFIED:** Ask for confirmation
+            const confirmation = confirm("Are you sure you want to reset ALL inventory counts to zero? This action cannot be undone.");
+
+            if (!confirmation) {
+                return; // Exit if the user cancels
+            }
+
+            const countInputs = inventoryForm.querySelectorAll('input[type="number"]');
+            
+            countInputs.forEach(input => {
+                input.value = "0.0"; // Reset to 0.0
+            });
+
+            // **NEW:** Clear data from Local Storage
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+
+            // Optional: Provide visual feedback for the reset button
+            resetButton.textContent = 'Reset Done! 🔄';
+            resetButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+            resetButton.classList.add('bg-gray-400', 'hover:bg-gray-500');
+
+            setTimeout(() => {
+                resetButton.textContent = 'Reset All';
+                resetButton.classList.remove('bg-gray-400', 'hover:bg-gray-500');
+                resetButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            }, 1000);
+        }
+
+
+        // --- 10. Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Expose functions globally for HTML attributes (onclick/oninput)
+            window.changeCount = changeCount;
+            window.saveCounts = saveCounts; 
+
+            renderInputFields();
+            copyButton.addEventListener('click', copyToClipboard);
+            resetButton.addEventListener('click', resetAllCounts); 
+        });
+
+    </script>
+
+</body>
+</html>
